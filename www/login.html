@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>IM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style type="text/css">
+    body {
+      background-color: #789; margin: 0;
+      padding: 0; font: 14px Helvetica, Arial, sans-serif;
+    }
+    div.content {
+        width: 800px; height:600px;margin: 2em auto; padding: 20px 50px;
+        background-color: #fff; border-radius: 1em;
+    }
+    #messages {
+      border: 2px solid #fec; border-radius: 0em;
+      height: 30em; overflow: scroll; padding: 0.5em 1em;
+    }
+    #send_input{
+        width:650px;
+    }
+    a:link, a:visited { color: #69c; text-decoration: none; }
+    @media (max-width: 700px) {
+      body { background-color: #fff; }
+      div.content {
+        width: auto; margin: 0 auto; border-radius: 0;
+        padding: 1em;
+      }
+    }
+    #info{
+        animation:change 10s linear 0s infinite;font-size:15px;font-weight:60;
+    }
+    #user_name{
+        animation:change 5s linear 0s infinite;font-size:12px;font-weight:50;
+    }
+    @keyframes change{
+        0%   {color:#333;}
+        25%  {color:#ff0;}
+        50%  {color:#f60;}
+        75%  {color:#cf0;}
+        100% {color:#f00;}
+    }
+</style>
+
+</head>
+<body>
+  <div id="app">
+    <div class="content">
+      <h1>欢迎来到巴塞罗那更衣室</h1>
+
+      <p>
+      </p>
+
+      <div id="messages">
+      </div>
+
+      <p>
+        <input type="text" id="send_input" v-on:keyup.enter="send()" v-model="send_msg"/>
+        <button id="send_button"v-on:click="send()"> 发送 </button>
+        <button id="quit_button"v-on:click="quit()"> 退出 </button>
+      </p>
+    </div>
+  </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script>
+var app = new Vue({
+  el: '#app',
+  data: {
+    websocket:null,
+    send_msg:""
+  },
+  methods:{
+    init:function(){
+      var ws_url="ws://"+window.location.host+"/websocket";
+      this.websocket=new WebSocket(ws_url);
+      this.websocket.onopen=this.ws_onopen;
+      this.websocket.onmessage=this.ws_onmessage;
+      this.websocket.onerror=this.ws_onerror;
+      this.websocket.onclose=this.ws_onclose;
+    },
+    ws_onopen:function(){
+      //建立websocket连接触发
+      alert("聊天通道建立成功");
+    },
+    ws_onmessage:function(e){
+      //收到消息触发 e.data就是收到的数据
+      var com_div=document.createElement("div");
+      com_div.innerHTML=e.data;
+      var html_div=document.getElementById("messages");
+      html_div.appendChild(com_div);
+    },
+    ws_onerror:function(){
+      //通信发生错误触发
+      alert("通信错误");
+      this.init();
+    },
+    ws_onclose:function(){
+      //通信关闭触发
+      alert("连接关闭");
+      this.websocket.close(); //关闭websocket连接
+    },
+    get_cookie_name:function(){
+      var cookie=document.cookie;
+      var cookie_arr=cookie.split("; ");
+      for(var i=0;i<cookie_arr.length;i++){
+        var a=cookie_arr[i].split("=");
+        if(a[0]=="NAME"){
+          return a[1];
+        }
+      }
+      return "匿名";
+    },
+    send:function(){
+      if(this.send_msg==0){
+        alert("消息不能为空");
+        return;
+      }
+      var username=this.get_cookie_name();
+      var msg="<p>"+ username+":"+this.send_msg+"</p>"
+      this.websocket.send(msg);
+      this.send_msg="";
+    },
+    quit:function(){
+      this.websocket.close(); //关闭websocket连接
+      window.location.href="/index.html";
+    }
+  }
+})
+app.init();
+</script>
+</html>
